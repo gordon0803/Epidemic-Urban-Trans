@@ -1,0 +1,127 @@
+hybrid reachability
+{
+ state var x1,x2,x3,t
+ 
+ par
+ {
+  a=1
+ }
+  
+ setting
+ {
+  fixed steps 0.02
+  time 100
+  remainder estimation 1e-2
+  identity precondition
+  matlab octagon x1 , x2
+  adaptive orders { min 4 , max 8 }
+  cutoff 1e-12
+  precision 53
+  output switch_server
+  max jumps 40
+  print on
+ }
+  
+ modes
+ {
+  q1
+  {
+   poly ode 1
+   {
+    x1' = -2 
+    x2' = 1
+    x3' = 0
+    t' = 1
+   }
+   inv
+   {
+    x1 >= 0
+    x2 >= 0
+   }
+  }
+
+  q2
+  {
+   poly ode 1
+   {
+    x1' = 0 
+    x2' = 1
+    x3' = 1
+    t' = 1
+    
+   }
+   inv
+   {
+    x1 >= 0
+    x2 >= 0
+    x3 <=0.5
+   }
+  }
+  
+  q3
+  {
+   poly ode 1
+   {
+    x1' = 1 
+    x2' = -2
+    x3' = 0
+    t' = 1
+   }
+   inv
+   {
+    x1 >= 0
+    x2 >= 0
+   }
+  }
+
+  q4
+  {
+   poly ode 1
+   {
+    x1' = 1 
+    x2' = 0
+    x3' = 1
+    t' = 1
+   }
+   inv
+   {
+    x1 >= 0
+    x2 >= 0
+    x3 <= 0.5
+   }
+  }
+ }
+  
+ jumps
+ {
+  q1 -> q2
+  guard { x1 <= 0 }
+  reset { x1' := x1  x2' := x2  x3' := 0 }
+  parallelotope aggregation {  }
+
+  q2 -> q3
+  guard { x3 >= 0.5 }
+  reset { x1' := x1  x2' := x2  x3' := x3 }
+  parallelotope aggregation {  }
+
+  q3 -> q4
+  guard { x2 <= 0 }
+  reset { x1' := x1  x2' := x2 x3' := 0 }
+  parallelotope aggregation {  }
+
+  q4 -> q1
+  guard { x3 >= 0.5 }
+  reset { x1' := x1  x2' := x2 x3' := x3 }
+  parallelotope aggregation {  }
+ }
+  
+ init
+ {
+  q1
+  {
+   x1 in [1,2]
+   x2 in [1,2]
+   x3 in [0,0]
+  }
+ }
+}

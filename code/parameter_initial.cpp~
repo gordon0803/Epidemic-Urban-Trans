@@ -1,0 +1,221 @@
+//this part is for initial some parameters
+//n_zone: number of zones, S,I,E,R four states, each has n_zone*n_zone variables
+//let variable 1:n_zone^2 be variables for S, n_zone^2+1:2*n_zone^2 for I, etc... and we build the following variables
+
+#include <fstream>
+#include <sstream>
+
+int n_zone=3;
+int var_id=0; //this is the index for variables, e.g., S_11=y[0]
+int S[n_zone][n_zone],I[n_zone][n_zone],E[n_zone][n_zone],R[n_zone][n_zone];
+double path_matrix[n_zone^2][n_zone^2];
+
+
+//initialize variable ids for linear terms
+for(int i=0;i<n_zone;i++){
+	for(int j=0:j<n_zone;j++){
+		S[i][j]=var_id;
+		var_id++;
+	}
+}
+
+for(int i=0;i<n_zone;i++){
+	for(int j=0:j<n_zone;j++){
+		I[i][j]=var_id;
+		var_id++;
+	}
+}
+
+for(int i=0;i<n_zone;i++){
+	for(int j=0:j<n_zone;j++){
+		E[i][j]=var_id;
+		var_id++;
+	}
+}
+
+for(int i=0;i<n_zone;i++){
+	for(int j=0:j<n_zone;j++){
+		R[i][j]=var_id;
+		var_id++;
+	}
+}
+
+//create the incident matrix to check if path {ij} intersects path {ku}
+ifstream file("pathlist.csv");
+for(int row = 0; row < n_zone^2; ++row)
+{
+    std::string line;
+    std::getline(file, line);
+    if ( !file.good() ) 
+        break;
+
+    std::stringstream iss(line);
+    for (int col = 0; col < n_zone^2; ++col)
+    {
+        std::string val;
+        std::getline(iss, val, ',');
+        if ( !iss.good() ) 
+            break;
+
+        std::stringstream convertor(val);
+        convertor >> path_matrix[row][col];
+    }
+}
+
+//The rest of the numerical variables
+int n_mode=3; //number of transportation mode
+double sigma=0.1,gamma=0.1; //sigma: latent period coeff, gamma: recovery rate
+double betainn=0.1; double betatra[3]={0.3,0.1,0.001}; //traffic contact rate
+double d={0.6,0.8,1}; //different levels of control
+double c[3]={0.4,0.3,0.3};  // ratio of people move from i to j who choose travel mode m, i,j=1,2,3
+double Np[3]={1,1,1}; // population of patch i
+double N[3][3]={{0.5,0.3,0.2},{0.3,0.4,0.3},{0.2,0.3,0.5}}; // the amount of people currently at patch j who are the residents of patch i 
+double g[3]={0.3,0.3,0.3}; // total departure rate of patch i
+double m[3][3]={{0,0.6,0.4},{0.5,0,0.5},{0.4,0.6,0}}; // the rate of movement from patch i to patch j
+double r[3][3]={{0,0.6,0.3},{0.6,0,0.3},{0.3,0.6,0}}; // return rate of people who have traveled from patch i to patch j
+
+//Now write the S,E,I,R formula
+//start with S
+for(int i=0;i<n_zone;i++){
+	for(int j=0;j<n_zone;j++){
+		//same zone
+		if(i==j){
+			yp[S[i][j]]=g[i]*y[S[i][j]]+betainn/Np[i]*y[S[i][j]]*y[I[i][j]]; //departure plus inzone contagion
+			for (int k=0;k<n_zone;k++){
+				if (k!=j){
+					yp[S[i][j]]+=-r[i][k]*y[S[i][k]];
+					for (int l=0;l<n_mode;l++){
+						yp[S[i][j]]+=betainn/Np[i]*y[S[i][j]]*c[l]*d[l]*y[I[k][i]];
+					}
+				}
+			}
+			
+		//i!=j, within zone travel
+		}else{
+			yp[S[i][j]]=r[i][j]*y[S[i][j]]-g[i]*m[i][j]*y[S[i][i]]+betainn/Np[j]*y[S[i][j]]*y[I[j][j]]; //return plus departure
+			//destination contagion
+			for(int k=0;k<n_zone;k++){
+				if(k!=j){
+					for(int l=0;l<n_mode;l++){
+						yp[S[i][j]]+=betainn/Np[j]*y[S[i][j]]*c[l]*d[l]*y[I[k][i]];
+					}
+				}
+			}
+			//within transportation contagion
+			for(int l=0;l<n_mode;l++){
+				//calculate denominator first, which is total amount of flow that may get across
+				double denom=0;
+				for(int k=0;k<n_zone;k++){
+					for(int u=0;u<n_zone;u++){
+						denom+=c[l]*path_matrix[S[i][j]][S[k][u]]*N[k][u];
+					}
+				}
+				
+				for(int k=0;k<n_zone;k++){
+					for(int u=0;u<n_zone;u++){
+						yp[S[i][j]]+=betatra[l]*c[l]*y[S[i][j]]*c[l]*path_matrix[S[i][j]][S[k][u]]*d[l]*y[I[k][u]]/denom;
+					}
+				}
+
+			}
+			
+		}
+	}
+}
+
+
+//start with E
+for(int i=0;i<n_zone;i++){
+	for(int j=0;j<n_zone;j++){
+		//same zone
+		if(i==j){
+			yp[E[i][j]]=g[i]*y[E[i][j]]-betainn/Np[i]*y[S[i][j]]*y[I[i][j]]+sigma*y[E[i][j]]; //departure plus inzone contagion
+			for (int k=0;k<n_zone;k++){
+				if (k!=j){
+					yp[E[i][j]]+=-r[i][k]*y[E[i][k]];
+					for (int l=0;l<n_mode;l++){
+						yp[E[i][j]]+=-betainn/Np[i]*y[S[i][j]]*c[l]*d[l]*y[I[k][i]];
+					}
+				}
+			}
+			//i!=j, between zones
+		}else{
+			yp[E[i][j]]=r[i][j]*y[E[i][j]]-g[i]*m[i][j]*y[E[i][i]]-betainn/Np[j]*y[S[i][j]]*y[I[j][j]]; //return plus departure
+			//destination contagion
+			for(int k=0;k<n_zone;k++){
+				if(k!=j){
+					for(int l=0;l<n_mode;l++){
+						yp[E[i][j]]+=-betainn/Np[j]*y[S[i][j]]*c[l]*d[l]*y[I[k][i]];
+					}
+				}
+			}
+			//within transportation contagion
+			for(int l=0;l<n_mode;l++){
+				//calculate denominator first, which is total amount of flow that may get across
+				double denom=0;
+				for(int k=0;k<n_zone;k++){
+					for(int u=0;u<n_zone;u++){
+						denom+=c[l]*path_matrix[S[i][j]][S[k][u]]*N[k][u];
+					}
+				}
+				
+				for(int k=0;k<n_zone;k++){
+					for(int u=0;u<n_zone;u++){
+						yp[E[i][j]]+=-betatra[l]*c[l]*y[S[i][j]]*c[l]*path_matrix[S[i][j]][S[k][u]]*d[l]*y[I[k][u]]/denom;
+					}
+				}
+
+			}
+			
+		}
+	}
+}
+
+//start with I
+for(int i=0;i<n_zone;j++){
+	for(int j=0;j<n_zone;j++){
+		//within zone
+		if(i==j){
+			yp[I[i][j]]=g[i]*y[I[i][j]]-sigma*y[E[i][j]]+gamma*y[I[i][j]];
+			for(int k=0;k<n_zone;k++){
+				if(k!=i){
+					for(int l=0;l<n_mode;l++){
+						yp[I[i][j]]+=-r[i][k]*d[l]c[l]y[I[i][j]];
+					}
+				}
+			}
+		}
+		//i!=j, out zone travel
+		else{
+			yp[I[i][j]]=r[i][j]*y[I[i][j]]-sigma*y[E[i][j]];
+			for(int l=0;l<n_mode;l++){
+				yp[I[i][j]]+=-g[i]*m[i][j]*c[l]*d[l]*y[I[i][i]]+gamma*c[l]*d[l]*y[I[i][j]]]+c[l]*(1-d[l])*y[I[i][j]];
+			}
+		}
+		
+	}
+}
+
+//start with R
+for(int i=0;i<n_zone;j++){
+	for(int j=0;j<n_zone;j++){
+		if(i==j){
+			yp[R[i][j]]=g[i]*y[R[i][j]]-gamma*y[I[i][j]];
+			for(int k=0;k<n_zone;k++){
+				if(k!=j){
+					yp[R[i][j]]+=-r[i][k]*y[R[i][k]];
+					for(int l=0;l<n_mode;l++){
+						yp[R[i][j]]+=-r[i][k]*(1-d[l])*c[l]*y[I[i][k]];
+					}
+				}
+			}
+		}
+		else{
+			yp[R[i][j]]=r[i][j]*y[R[i][j]]-g[i]*m[i][j]*y[R[i][i]];
+			for(int l=0;l<n_mode;l++){
+				yp[R[i][j]]+=-gamma*c[l]*d[l]*y[I[i][j]]-c[l]*(1-d[l])*y[I[i][j]];
+			}
+				
+		}
+	}
+}
