@@ -78,9 +78,21 @@
 \lstset{extendedchars=false}
 \geometry{verbose,letterpaper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
 
+
+
+
+
+\usepackage{algorithmic}
 \usepackage{tikz}
 \usepackage{caption}
 \usepackage{xinchen_macros}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\renewcommand{\algorithmiccomment}[1]{\hfill{$\#$ #1}}
+
+
+
 
 %% Equation numbering
 \numberwithin{equation}{section}
@@ -554,5 +566,6 @@ For Figure~\ref{fig:compare} (a)-(d), they show the reachable set when starting 
 
  
 \bibliographystyle{unsrt}
-\bibliography{main}
+\bibliography{bibliography}
+%\bibliography{main}
 \end{document}

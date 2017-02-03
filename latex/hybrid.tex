@@ -2,7 +2,7 @@
 
 \subsection{Hybrid Automata}
 
-Hybrid systems are a class of dynamical systems exhibiting both continuous flow and discrete jumps. They are usually systems composed of a discrete controller interacting with a physical environment. A popular class of formal models for hybrid systems are called \emph{hybrid automata}~\cite{}, whose definition is given as follows.
+Hybrid systems are a class of dynamical systems exhibiting both continuous flow and discrete jumps. They are usually systems composed of a discrete controller interacting with a physical environment. A popular class of formal models for hybrid systems are called \emph{hybrid automata}~\cite{Alur+/1995/hybrid_systems}, whose definition is given as follows.
 
 \begin{defn}
  A \emph{hybrid automaton} is defined by a tuple $\mathcal{A} = \tupleof{\loc, \var, \flow, \trans, \inv, \init}$ such that
@@ -51,16 +51,51 @@ Hybrid systems are a class of dynamical systems exhibiting both continuous flow 
 
 A \emph{state} of a hybrid automaton $\mathcal{A}$ is denoted by a pair $(\ell, v)$ wherein $\ell$ is the current location and $v$ is a constant vector whose components denote the current values of the variables. A state $(\ell,v)$ can evolve to $(\ell', v')$ in the following two cases: (i) \emph{continuous evolution}, i.e., $\ell = \ell'$ and there is a solution $\varphi(t)$ of the ODE of $\ell$ such that $v = \varphi(t_1)$, $v' = \varphi(t_2)$, $t_1 \leq t_2$ and $\varphi(t) \in \inv(\ell)$ for all $t \in [0,t_2]$; (ii) \emph{discrete evolution}, i.e., there is a jump $\tupleof{\ell, G, R, \ell'}$ such that $v\in G$ and $v$ is updated to $v'$ according to $R$.
 
-An \emph{execution} of a hybrid automaton is a sequence of states such that there is an evolution for each successive pair. As an example, Figure~\ref{fig:execution} shows an execution of the bouncing ball hybrid automaton over the time $[0,5]$.
+An \emph{execution} of a hybrid automaton is a sequence of states such that there is an evolution for each successive pair. As an example, Figure~\ref{fig:execution} shows an execution of the bouncing ball hybrid automaton over the time $[0,5]$. We call a state \emph{reachable} if it occurs in at least one execution of the system.
 
 
 
 
 \subsection{Reachability Analysis}
 
+The main task of reachability analysis is to check whether a given state is reachable or not. It plays a key role in the safety verification for systems, since if we can ensure that no unsafe state is reachable then the system is proved to be safe. However, checking the reachability of a state is not \emph{decidable} on hybrid automata (see~\cite{Alur+/1995/hybrid_systems}), we resort to computing an overapproximation for the system reachable state set.
+
+
+In the paper, we use the tool \flowstar~\cite{Chen+/2013/flowstar} which computes Taylor model flowpipes for the hybrid automata with nonlinear dynamics. A \emph{Taylor model flowpipe} is an overapproximation of the reachable set in a small time period which is called a time step.
+
+
+Taylor models are proposed by Berz and Makino as a replacement of intervals in rigorous computation (see~\cite{Berz/1999/Modern,Makino+Berz/2003/Taylor}). A Taylor Model (TM) is defined by a pair $(p,I)$ such that $p$ is a polynomial over a finite set of variables whose ranges are intervals, and $I$ is an interval. Given a continuous function $f(x)$ with $x\in D$ for some interval $D$. A TM (overapproximation) of it can be computed as $(p_f(x), I_f)$ such that $\forall x\in D.(f(x) \in p(x) + I)$. Usually, $p$ is a Taylor approximation of $f$ at the center of $D$ and $I$ is an interval enclosure of the remainder term. TMs are closed under operations such as addition, multiplication, and integration. Hence, a TM for a composed function can be computed based on the TMs of the components by TM arithmetic (see~\cite{Makino+Berz/2003/Taylor}).
+
+
+In the rest of the section, we briefly introduce the approach of TM flowpipe construction. For hybrid automata, we need to compute the flowpipes under the two types of evolutions. The main framework is given by Algorithm~\ref{algo:hybrid_flowpipes}, and more details are also provided as follows.
+
+
+\begin{algorithm}
+ \caption{Flowpipe construction for hybrid automata}\label{algo:hybrid_flowpipes}
+ \begin{algorithmic}[1]
+  \REQUIRE{$\mathcal{A} = \tupleof{\loc, \var, \flow, \trans, \inv, \init}$, $T$, $k$.}
+  \ENSURE{Overapproximation of the state set which are reachable in the time $[0,T]$ by at most $k$ jumps.}
+  \STATE Add $\init$ to $\textit{Queue}$;
+  \STATE $\mathcal{R} \leftarrow \emptyset$;
+  \WHILE{$\text{Queue}$ is not empty}
+   \STATE Dequeue the first state set in $\textit{Queue}$ and keep it as $S$;
+   \STATE Compute the TM flowpipes from $S$ only under the continuous dynamics and add them to $\mathcal{R}$;
+   \STATE Check the feasibility of all jumps in $\trans$.
+   \STATE Compute TMs for the reachable sets under the jumps that are enabled;
+   \STATE For each TM, if the corresponding time does not exceed $T$ and less than $k$ jumps executed previously, then add it to $\textit{Queue}$;
+  \ENDWHILE
+  \RETURN $\mathcal{R}$;
+ \end{algorithmic}
+\end{algorithm}
+
+\noindent\textbf{Computing flowpipes under continuous dynamics.}
 
 
 
+\noindent\textbf{Feasibility checking for the jumps.}
 
+
+
+\noindent\textbf{Computing a TM overapproximation under a jump.}
 
 
