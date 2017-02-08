@@ -21,8 +21,10 @@ Hybrid systems are a class of dynamical systems exhibiting both continuous flow 
  \end{itemize}
 \end{defn}
 
+In the paper, we consider the jump guards defined by polynomial constraints, and jump resets defined by polynomial mappings.
+
 \begin{example}
- We consider the motion of a bouncing ball. We introduce the variable $x$ to denote the height of the ball and $v$ to denote its velocity. Initially, the ball is static and is at the position that is $5$m from the ground. Then it falls down due to gravity. When the ball hits the ground while falling, then it is bounced up, that is, the velocity is reversed immediately with some loss in the speed. Therefore, we need one location whose state space is at most a 2-dimensional Euclidean space. Since the height $x$ should always be non-negative, the invariant of the location is $\{(x',v')\,|\,x' \geq 0\}$. The continuous motion of the ball can be described by the ODE $\dot{x} = v$, $\dot{v} = -g$ wherein $g$ is the gravitational acceleration. The bouncing action can be modeled by a self-loop jump whose guard is $\{(x',v')\,|\,x' = 0 \wedge v' < 0\}$ and reset is $x' := x$, $v' = 0.8v$. Figure~\ref{fig:bouncing_ball} shows the hybrid automaton. In the rest of the paper, we omit the identity mapping(s) in a jump reset.
+ We study the motion of a bouncing ball. We introduce the variable $x$ to denote the height of the ball and $v$ to denote its velocity. Initially, the ball is static and is at the position that is $5$m from the ground. Then it falls down due to gravity. When the ball hits the ground while falling, then it is bounced up, that is, the velocity is reversed immediately with some loss in the speed. Therefore, we need one location whose state space is at most a 2-dimensional Euclidean space. Since the height $x$ should always be non-negative, the invariant of the location is $\{(x',v')\,|\,x' \geq 0\}$. The continuous motion of the ball can be described by the ODE $\dot{x} = v$, $\dot{v} = -g$ wherein $g$ is the gravitational acceleration. The bouncing action can be modeled by a self-loop jump whose guard is $\{(x',v')\,|\,x' = 0 \wedge v' < 0\}$ and reset is $x' := x$, $v' = 0.8v$. Figure~\ref{fig:bouncing_ball} shows the hybrid automaton. In the rest of the paper, we omit the identity mapping(s) in a jump reset.
 \end{example}
 
 \begin{minipage}{0.48\textwidth}
@@ -92,9 +94,11 @@ In the rest of the section, we briefly introduce the approach of TM flowpipe con
 \noindent\textbf{Computing flowpipes under continuous dynamics.}
 We use the technique named \emph{Taylor model integration} to compute overapproximations for the solutions of a nonlinear ODE with respect to a set of initial states. The main idea is explained as follows. Given an ODE $\dot{x} = f(\vx,t)$ and an initial condition $\vx(0) \in X_0$, we compute $N$ TM flowpipes $(p_1(\vx_0,t), I_1)$, $\dots$, $(p_N(\vx_0,t), I_N)$ with a time step size $\delta > 0$ to cover the time horizon $[0,N\delta]$, such that for $i=1,\dots,N$, the range of $(p_i(\vx_0,t), I_i)$ with $\vx_0\in X_0$ and $t\in [0,\delta]$ contains all ODE solutions in the time $[(i-1)\delta, i\delta]$, i.e., it is an overapproximation of the reachable set in the time $[(i-1)\delta, i\delta]$. The flowpipes are computed consecutively. More detains could be found in~\cite{Berz+Makino/1998/Verified, Chen/2015/phd}.
 
+\todo{Add figures for flowpipes under continuous dynamics and jumps. }
+
 
 \noindent\textbf{Feasibility checking for the jumps.}
-When the TM flowpipes under the continuous dynamics are computed in a location $\ell$, we need to check the feasibility of all jumps starting from $\ell$. To do so,
+When the TM flowpipes under the continuous dynamics are computed in a location $\ell$, we need to check the feasibility of all jumps starting from $\ell$. To do so, we check the validity of the formula $\exists i.\exists \vx_0.\exists t.(1\leq i\leq N \wedge \vx\in X_0 \wedge t\in [0,\delta] \wedge \vu\in I_i \wedge p_i(\vx_0,t) + vu) \in G$ for a guard $G$, i.e., at least one TM flowpipe has a non-empty intersection with $G$. Since the formula consists of nonlinear constraints which make it hard to solve exactly, we may resort to conservative methods such as Interval Constraint Propagation (ICP).
 
 
 
