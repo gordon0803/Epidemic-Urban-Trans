@@ -51,7 +51,7 @@ Hybrid systems are a class of dynamical systems exhibiting both continuous flow 
 
 A \emph{state} of a hybrid automaton $\mathcal{A}$ is denoted by a pair $(\ell, v)$ wherein $\ell$ is the current location and $v$ is a constant vector whose components denote the current values of the variables. A state $(\ell,v)$ can evolve to $(\ell', v')$ in the following two cases: (i) \emph{continuous evolution}, i.e., $\ell = \ell'$ and there is a solution $\varphi(t)$ of the ODE of $\ell$ such that $v = \varphi(t_1)$, $v' = \varphi(t_2)$, $t_1 \leq t_2$ and $\varphi(t) \in \inv(\ell)$ for all $t \in [0,t_2]$; (ii) \emph{discrete evolution}, i.e., there is a jump $\tupleof{\ell, G, R, \ell'}$ such that $v\in G$ and $v$ is updated to $v'$ according to $R$.
 
-An \emph{execution} of a hybrid automaton is a sequence of states such that there is an evolution for each successive pair. As an example, Figure~\ref{fig:execution} shows an execution of the bouncing ball hybrid automaton over the time $[0,5]$. We call a state \emph{reachable} if it occurs in at least one execution of the system.
+An \emph{execution} of a hybrid automaton is a sequence of states such that there is an evolution for each successive pair. As an example, Figure~\ref{fig:execution} illustrates an execution of the bouncing ball hybrid automaton over the time $[0,5]$. The trajectory is formed by line connecting each pair of successive states. Additionally, we call a state \emph{reachable} if it occurs in at least one execution of the system.
 
 
 
@@ -80,22 +80,25 @@ In the rest of the section, we briefly introduce the approach of TM flowpipe con
   \WHILE{$\text{Queue}$ is not empty}
    \STATE Dequeue the first state set in $\textit{Queue}$ and keep it as $S$;
    \STATE Compute the TM flowpipes from $S$ only under the continuous dynamics and add them to $\mathcal{R}$;
-   \STATE Check the feasibility of all jumps in $\trans$.
-   \STATE Compute TMs for the reachable sets under the jumps that are enabled;
-   \STATE For each TM, if the corresponding time does not exceed $T$ and less than $k$ jumps executed previously, then add it to $\textit{Queue}$;
+   \STATE Check the feasibility of all jumps in $\trans$;
+   \STATE Compute a TM for the reachable set under each jump that is enabled;
+   \STATE For each TM, if the corresponding time interval does not exceed $T$ and less than $k$ jumps executed previously, then add it to $\textit{Queue}$;
   \ENDWHILE
   \RETURN $\mathcal{R}$;
  \end{algorithmic}
 \end{algorithm}
 
-\noindent\textbf{Computing flowpipes under continuous dynamics.}
 
+\noindent\textbf{Computing flowpipes under continuous dynamics.}
+We use the technique named \emph{Taylor model integration} to compute overapproximations for the solutions of a nonlinear ODE with respect to a set of initial states. The main idea is explained as follows. Given an ODE $\dot{x} = f(\vx,t)$ and an initial condition $\vx(0) \in X_0$, we compute $N$ TM flowpipes $(p_1(\vx_0,t), I_1)$, $\dots$, $(p_N(\vx_0,t), I_N)$ with a time step size $\delta > 0$ to cover the time horizon $[0,N\delta]$, such that for $i=1,\dots,N$, the range of $(p_i(\vx_0,t), I_i)$ with $\vx_0\in X_0$ and $t\in [0,\delta]$ contains all ODE solutions in the time $[(i-1)\delta, i\delta]$, i.e., it is an overapproximation of the reachable set in the time $[(i-1)\delta, i\delta]$. The flowpipes are computed consecutively. More detains could be found in~\cite{Berz+Makino/1998/Verified, Chen/2015/phd}.
 
 
 \noindent\textbf{Feasibility checking for the jumps.}
+When the TM flowpipes under the continuous dynamics are computed in a location $\ell$, we need to check the feasibility of all jumps starting from $\ell$. To do so,
 
 
 
-\noindent\textbf{Computing a TM overapproximation under a jump.}
+
+\noindent\textbf{Computing a TM reachable set overapproximation under a jump.}
 
 
