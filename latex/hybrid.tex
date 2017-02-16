@@ -53,17 +53,17 @@ In the paper, we consider the jump guards defined by polynomial constraints, and
 
 A \emph{state} of a hybrid automaton $\mathcal{A}$ is denoted by a pair $(\ell, v)$ wherein $\ell$ is the current location and $v$ is a constant vector whose components denote the current values of the variables. A state $(\ell,v)$ can evolve to $(\ell', v')$ in the following two cases: (i) \emph{continuous evolution}, i.e., $\ell = \ell'$ and there is a solution $\varphi(t)$ of the ODE of $\ell$ such that $v = \varphi(t_1)$, $v' = \varphi(t_2)$, $t_1 \leq t_2$ and $\varphi(t) \in \inv(\ell)$ for all $t \in [0,t_2]$; (ii) \emph{discrete evolution}, i.e., there is a jump $\tupleof{\ell, G, R, \ell'}$ such that $v\in G$ and $v$ is updated to $v'$ according to $R$.
 
-An \emph{execution} of a hybrid automaton is a sequence of states such that there is an evolution for each successive pair. As an example, Figure~\ref{fig:execution} illustrates an execution of the bouncing ball hybrid automaton over the time $[0,5]$. The trajectory is formed by line connecting each pair of successive states. Additionally, we call a state \emph{reachable} if it occurs in at least one execution of the system.
+An \emph{execution} of a hybrid automaton is a sequence of states such that there is an evolution for each successive pair. As an example, Figure~\ref{fig:execution} illustrates an (approximate) execution of the bouncing ball hybrid automaton over the time $[0,5]$. The trajectory is formed by line connecting each pair of successive states. Additionally, we call a state \emph{reachable} if it occurs in at least one execution of the system.
 
 
 
 
 \subsection{Reachability Analysis}
 
-The main task of reachability analysis is to check whether a given state is reachable or not. It plays a key role in the safety verification for systems, since if we can ensure that no unsafe state is reachable then the system is proved to be safe. However, checking the reachability of a state is not \emph{decidable} on hybrid automata (see~\cite{Alur+/1995/hybrid_systems}), we resort to computing an overapproximation for the system reachable state set.
+The main task of reachability analysis is to check whether a given state is reachable or not. It plays a key role in the safety verification for systems, since if we can ensure that no unsafe state is reachable then the system is proved to be safe. However, checking the reachability of a state is not \emph{decidable} on hybrid automata (see~\cite{Alur+/1995/hybrid_systems}), we resort to computing an overapproximation for the system reachable state set. In safety verification, if the overapproximation does not contain any unsafe state then the system is safe.
 
 
-In the paper, we use the tool \flowstar~\cite{Chen+/2013/flowstar} which computes Taylor model flowpipes for the hybrid automata with nonlinear dynamics. A \emph{Taylor model flowpipe} is an overapproximation of the reachable set in a small time period which is called a time step.
+In the paper, we use the tool \flowstar~\cite{Chen+/2013/flowstar} which computes Taylor model flowpipes for the hybrid automata with nonlinear dynamics. A \emph{Taylor model flowpipe} is an overapproximation of the reachable set in a small time period which is called a time step. More precisely, all reachable states in that time step is contained in the range of the flowpipe.
 
 
 Taylor models are proposed by Berz and Makino as a replacement of intervals in rigorous computation (see~\cite{Berz/1999/Modern,Makino+Berz/2003/Taylor}). A Taylor Model (TM) is defined by a pair $(p,I)$ such that $p$ is a polynomial over a finite set of variables whose ranges are intervals, and $I$ is an interval. Given a continuous function $f(x)$ with $x\in D$ for some interval $D$. A TM (overapproximation) of it can be computed as $(p_f(x), I_f)$ such that $\forall x\in D.(f(x) \in p(x) + I)$. Usually, $p$ is a Taylor approximation of $f$ at the center of $D$ and $I$ is an interval enclosure of the remainder term. TMs are closed under operations such as addition, multiplication, and integration. Hence, a TM for a composed function can be computed based on the TMs of the components by TM arithmetic (see~\cite{Makino+Berz/2003/Taylor}).
@@ -94,7 +94,17 @@ In the rest of the section, we briefly introduce the approach of TM flowpipe con
 \noindent\textbf{Computing flowpipes under continuous dynamics.}
 We use the technique named \emph{Taylor model integration} to compute overapproximations for the solutions of a nonlinear ODE with respect to a set of initial states. The main idea is explained as follows. Given an ODE $\dot{x} = f(\vx,t)$ and an initial condition $\vx(0) \in X_0$, we compute $N$ TM flowpipes $(p_1(\vx_0,t), I_1)$, $\dots$, $(p_N(\vx_0,t), I_N)$ with a time step size $\delta > 0$ to cover the time horizon $[0,N\delta]$, such that for $i=1,\dots,N$, the range of $(p_i(\vx_0,t), I_i)$ with $\vx_0\in X_0$ and $t\in [0,\delta]$ contains all ODE solutions in the time $[(i-1)\delta, i\delta]$, i.e., it is an overapproximation of the reachable set in the time $[(i-1)\delta, i\delta]$. The flowpipes are computed consecutively. More detains could be found in~\cite{Berz+Makino/1998/Verified, Chen/2015/phd}.
 
-\todo{Add figures for flowpipes under continuous dynamics and jumps. }
+\begin{minipage}{0.53\textwidth}
+ \centering
+ \includegraphics[height=5cm]{images/reachability.png}
+ \captionof{figure}{An overapproximation for flowpipe/guard intersections}\label{fig:intersection}
+\end{minipage}
+\hspace{1ex}
+\begin{minipage}{0.43\textwidth}
+ \centering
+ \includegraphics[height=5cm]{images/example_2D.png}
+ \captionof{figure}{Flowpipes for the $2$-D hybrid automaton}\label{fig:example_2D}
+\end{minipage}
 
 
 \noindent\textbf{Feasibility checking for the jumps.}
@@ -104,5 +114,18 @@ When the TM flowpipes under the continuous dynamics are computed in a location $
 
 
 \noindent\textbf{Computing a TM reachable set overapproximation under a jump.}
+After we ensure the feasibility of a jump $\tupleof{\ell, G, R, \ell'}$, we need to first compute the intersection $\flowpipe \cap G$ such that $\flowpipe$ is the union of all flowpipes in the location $\ell$, and then compute the image of the intersection under the reset mapping $R$. Since the intersection can hardly be computed exactly, we try to obtain an overapproximation of it. Figure~\ref{fig:intersection} illustrates an example of overapproximating a set of flowpipe/guard intersections. We use the techniques named \emph{domain contraction} and \emph{range overapproximation} to obtain a TM overapproximation for each flowpipe/guard intersection, and then aggregate them by one TM. More details are provided in~\cite{Chen+/2012/taylor_models,Chen/2015/phd}.
+
+
+\begin{example}
+ We consider a $2$-dimensional hybrid automaton which consists of two locations and one jump. The dynamics in location $1$ is $\dot{x} = x$, $\dot{t} = 1$, and the dynamics in location $2$ is $\dot{x} = -x$, $\dot{t} = 1$. The invariant in both of the locations is defined by $x\in [0,5]$. There is a jump from location $1$ to $2$ and it is enabled when $x \in [4.8,5]$. Figure~\ref{fig:example_2D} shows some TM flowpipes for the reachable set from the initial condition $x\in [2,2.2]$ and $t = 0$. Since TMs are hard to be plotted exactly, we shows their octagon overapproximations. The four blue flowpipes are detected to intersect the guard, and the red box is a TM overapproximation for their intersections with the guard.
+\end{example}
+
+
+
+
+
+
+
 
 
